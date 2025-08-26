@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Monogram Consoles</title>
+<script src="https://scripts.sirv.com/sirvjs/v3/sirv.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; overflow-x: hidden; scroll-behavior: smooth; }
+
+  /* Navbar */
+  .navbar {
+    position: absolute; top: 20px; left: 0; width: 100%;
+    background: #1a2456; color: #f2d5bc;
+    z-index: 1000; transition: background 0.3s, top 0.3s;
+    border-radius: 5px; padding: 10px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .navbar.sticky { position: fixed; top: 0; border-radius: 0; }
+  .navbar-container {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; gap: 5px; position: relative;
+  }
+  .logo { display: flex; align-items: center; gap: 8px; }
+  .logo img { height: 30px; }
+  .logo h2 { font-size: 18px; letter-spacing: 2px; color: #f2d5bc; }
+
+  /* Main Menu */
+  #mainMenu { display: flex; gap: 20px; list-style: none; align-items: center; }
+  #mainMenu a { text-decoration: none; color: #f2d5bc; font-weight: 500; }
+  .dropdown-content {
+    display: none; position: absolute; top: 100%; left: 0;
+    background: white; color:black; padding: 10px;
+    min-width: 180px; border-radius: 6px; z-index: 1000;
+  }
+  .dropdown:hover .dropdown-content { display: block; }
+  .dropdown-content a { display: block; margin: 5px 0; color: #333; text-decoration: none; }
+
+  /* Nav Extras */
+  .nav-extras { display: flex; align-items: center; gap: 20px; }
+  .shopping-bag { cursor: pointer; fill: #f2d5bc; transition: fill 0.3s; }
+  .shopping-bag:hover { fill: #ffcc00; }
+  .currency-selector {
+    padding: 0; border: none; background: transparent; color: #f2d5bc;
+    font-weight: 500; font-size: 1rem; appearance: none;
+  }
+
+  /* Hamburger toggle */
+  .menu-toggle { display: none; flex-direction: column; cursor: pointer; gap: 4px; z-index: 20; }
+  .menu-toggle span { width: 25px; height: 3px; background: #f2d5bc; border-radius: 2px; }
+
+  /* Hero */
+  .hero {
+    height: 100vh; /* full screen */
+    width: 100%;
+    background: url('https://monogramcc.com/static/9a0b554db1990565457610c5f83b3ad7/47498/shop_cta_xl_896f6b8270.jpg') center/cover no-repeat;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; text-align: center; position: relative;
+  }
+  .hero-text { color: #f2d5bc; font-size: 2rem; padding: 20px 40px; border-radius: 10px; }
+  .hero-arrow {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    font-size: 2rem; color: #f2d5bc; cursor: pointer; animation: bounce 2s infinite;
+  }
+  @keyframes bounce {
+    0%,20%,50%,80%,100% { transform: translateX(-50%) translateY(0); }
+    40% { transform: translateX(-50%) translateY(-10px); }
+    60% { transform: translateX(-50%) translateY(-5px); }
+  }
+
+  /* Side mobile menu */
+  #sideMenu {
+    position: fixed; top: 0; right: -260px;
+    width: 260px; height: 100%; background: #111; color: #f2d5bc;
+    z-index: 2000; padding: 20px;
+    transition: right 0.3s ease; display: flex; flex-direction: column; gap: 20px;
+  }
+  #sideMenu.active { right: 0; }
+  #sideMenu a { color: #f2d5bc; text-decoration: none; font-size: 18px; }
+  #sideMenu .side-logo { display: flex; align-items: center; gap: 8px; margin-bottom: 30px; }
+  #sideMenu .side-logo img { height: 28px; }
+  #sideMenu .dropdown-mobile { display: flex; flex-direction: column; cursor: pointer; }
+  #sideMenu .dropdown-mobile-content { display: none; flex-direction: column; padding-left: 15px; gap: 10px; }
+  #sideMenu .dropdown-mobile.active .dropdown-mobile-content { display: flex; }
+
+  /* Product grids */
+  .product-grid {
+    display: grid; gap: 2rem; padding: 2rem; max-width: 1200px; margin: 0 auto;
+    align-items: stretch; /* make all equal height */
+  }
+  .product-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .product-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 768px) {
+    .product-grid-2, .product-grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* Product cards */
+  .product-card {
+    background: white; padding: 1rem; border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    height: 100%; /* stretch full */
+    position: relative;
+  }
+  .figure {
+    position: relative; width: 100%;
+    padding-top: 100%; /* square, fills more height */
+    overflow: hidden; border-radius: 12px;
+  }
+  .figure img.Sirv.image-main,
+  .figure img.Sirv.image-hover {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover; transition: opacity 0.2s ease-in-out;
+  }
+  .figure img.Sirv.image-hover { opacity: 0; z-index: 2; }
+  .figure:hover img.Sirv.image-hover { opacity: 1; }
+
+  .product-header { display: flex; justify-content: space-between; align-items: center; margin-top: 0.8rem; }
+  .product-card h3 { font-size: 1.1rem; color: darkblue; }
+  .product-card .status { color: grey; font-size: 0.9rem; }
+  .product-card p { margin-top: 0.5rem; color: darkblue; text-align: left; font-size: 1rem; }
+  .badge {
+    position: absolute; top: 10px; right: 10px;
+    background: orange; color: white; font-size: 0.7rem;
+    padding: 0.3rem 0.6rem; border-radius: 5px; z-index: 5;
+  }
+
+  /* Custom console full-width */
+  .custom-console-full { width: 100%; margin: 2rem 0; }
+  .custom-console-bg-full {
+    width: 100%; height: 400px;
+    background: url('https://th.bing.com/th/id/OIP.u0KK4lkORlqhPWgiFNUwogHaDc?w=188&h=104&c=7&bgcl=0ad935&r=0&o=6&cb=thwsc4&dpr=1.3&pid=13.1') center/cover no-repeat;
+    display: flex; justify-content: center; align-items: center;
+  }
+  .custom-console-text {
+    text-align:center; color: #1a2456;
+    font-size: 25px; padding: 20px 40px; border-radius: 10px;
+  }
+  /* Responsive navbar for small screens */
+  @media (max-width: 900px) {
+    #mainMenu { display: none; }
+    .menu-toggle { display: flex; position: absolute; top: 50%; transform: translateY(-50%); right: 140px; }
+    .nav-extras { margin-left: auto; gap: 15px; }
+  }
+</style>
+</head>
+<body>
+<header class="navbar" id="navbar">
+  <div class="navbar-container">
+    <div class="logo">
+      <img src="photo_2025-08-14_18-52-53.jpg" alt="Logo">
+      <h2>MONOGRAM</h2>
+    </div>
+    <div style="display:flex; align-items:center; gap:20px;">
+      <ul id="mainMenu">
+        <li><a href="#">HOW IT WORKS</a></li>
+        <li class="dropdown">
+          <a href="#">WORKFLOWS ▼</a>
+          <div class="dropdown-content">
+            <a href="#">Audio console</a>
+            <a href="#">Image console</a>
+            <a href="#">Mini console</a>
+            <a href="#">Video console</a>
+          </div>
+        </li>
+        <li><a href="#">DOWNLOAD</a></li>
+        <li><a href="#">BLOG</a></li>
+        <li><a href="#">SUPPORT</a></li>
+        <li><a href="#">SHOP</a></li>
+      </ul>
+      <div class="nav-extras">
+        <img class="shopping-bag" src="Capture.PNG" width="38" height="45">
+        <select class="currency-selector">
+          <option value="usd">USD ▼</option>
+          <option value="eur">EUR</option>
+        </select>
+      </div>
+    </div>
+    <div class="menu-toggle" onclick="toggleSideMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+</header>
+
+<div id="sideMenu">
+  <div class="side-logo">
+    <img src="photo_2025-08-14_18-52-53.jpg" alt="Logo">
+    <h2>MONOGRAM</h2>
+  </div>
+  <a href="#">HOW IT WORKS</a>
+  <div class="dropdown-mobile" onclick="toggleDropdownMobile(this)">
+    WORKFLOWS ▼
+    <div class="dropdown-mobile-content">
+      <a href="#">Audio console</a>
+      <a href="#">Image console</a>
+      <a href="#">Mini console</a>
+      <a href="#">Video console</a>
+    </div>
+  </div>
+  <a href="#">DOWNLOAD</a>
+  <a href="#">BLOG</a>
+  <a href="#">SUPPORT</a>
+  <a href="#">SHOP</a>
+</div>
+
+<section class="hero">
+  <div class="hero-text">
+    <h1>A CONSOLE FOR EVERY WORKFLOW</h1>
+    <p>Discover the perfect console for yours</p>
+  </div>
+  <div class="hero-arrow" onclick="scrollToProducts()">▼</div>
+</section>
+
+<!-- Product grid 2-per-row -->
+<section class="product-grid product-grid-2" id="products">
+  <!-- MINI CONSOLE -->
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Everyday-Bundle-Mocks-final_1920x1281_crop_center.jpg.webp?v=1660013247" alt="Mini Console">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Everyday-Bundle-Mocks-horizontal_1920x1281_crop_center.jpg.webp?v=1668446709" alt="Mini Console Hover">
+      </a>
+       <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>MINI CONSOLE</h3>
+      <div class="status">Sold out</div>
+    </div>
+    <p>Ideal for photo & video. Adaptable to any workflow.</p>
+  </div>
+
+  <!-- AUDIO CONSOLE -->
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Packaging_TravelerClosedBracket1_Monogram_May20204517_d3899632-1a43-425f-a16a-1d5b968810c7_1920x1280_crop_center.jpg.webp?v=1623682377" alt="Audio Console">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Consoles_SliderBracket1_Monogram_May2020_4565_6accbb28-3f92-4365-a37c-db8caeee06d0_1920x1280_crop_center.jpg.webp?v=1685456413" alt="Audio Console Hover">
+      </a>
+       <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>AUDIO CONSOLE</h3>
+      <div class="status">Sold out</div>
+    </div>
+    <p>Ideal for music & audio. Adaptable to any workflow.</p>
+  </div>
+
+  <!-- PHOTO CONSOLE -->
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Packaging_StudioClosedBracket1_Monogram_May20204507_548446cb-17c9-4fc2-8b12-ae1b1a308a7e_1920x1280_crop_center.jpg.webp?v=1623269261" alt="Photo Console">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Consoles_StudioBracket1_Monogram_May2020_4558_53685b21-b09f-45b0-85a2-180d6acfafac_1920x1280_crop_center.jpg.webp?v=1668433210" alt="Photo Console Hover">
+      </a>
+       <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>PHOTO CONSOLE</h3>
+      <div class="status">Sold out</div>
+    </div>
+    <p>Ideal for photo & video. Adaptable to any workflow.</p>
+  </div>
+
+  <!-- VIDEO CONSOLE -->
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Packaging_MasterClosedBracket1_Monogram_May20204494_1920x1280_crop_center.jpg.webp?v=1623682600" alt="Video Console">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Consoles_MasterBracket1_Monogram_May2020_4555_1920x1280_crop_center.jpg.webp?v=1668433240" alt="Video Console Hover">
+      </a>
+       <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>VIDEO CONSOLE</h3>
+      <div class="status">Sold out</div>
+    </div>
+    <p>Ideal for Video & Film. Adaptable to any workflow.</p>
+  </div>
+</section>
+
+<!-- Double-width product card -->
+<section class="product-grid product-grid-2" style="margin:2rem auto;">
+  <div class="product-card" style="grid-column: span 2; padding: 2rem;">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/files/Monogram_Keyboard_Multipad-v2_1920x1300_crop_center.png.webp?v=1711651403" alt="Monogram Product">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/files/Monogram_Keyboard_2_878639a5-2865-4c4f-a21e-498f3a3db3b8_1920x1080_crop_center.jpg.webp?v=1712087494" alt="Monogram Product Hover">
+      </a>
+      <span class="badge">COMING SOON</span>
+    </div>
+    <div class="product-header">
+      <h3>MONOGRAM PRODUCT</h3>
+      <div class="status">Sold Out</div>
+    </div>
+    <p>Adaptable to any workflow. Featured edition with bigger size for better visibility.</p>
+  </div>
+</section>
+
+<!-- Custom console -->
+<section class="custom-console-full">
+  <div class="custom-console-bg-full">
+    <div class="custom-console-text">
+      <h2>CREATE YOUR OWN CONSOLE</h2>
+      <p>Design a console tailored to your workflow and style</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- Custom console product grid 3-per-row -->
+<section class="product-grid product-grid-3">
+  <!-- Product 1 -->
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/files/preview_images/d1564dbc344144d594c1e602d3ab46d7.thumbnail.0000000000_1920x1080_crop_center.jpg.webp?v=1712243546" alt="Product 1">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/files/Monogram_Keyboardv2_1920x1916_crop_center.png.webp?v=1711651435" alt="Product 1 Hover">
+      </a>
+      <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>MONOGRAM KEYBOARD</h3>
+      <div class="status">Sold out</div>
+    </div>
+  </div>
+
+  <!-- Product 2 -->
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/files/MonogramMultipad_1920x1396_crop_center.png.webp?v=1711648070" alt="Product 2">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/files/Monogram_Keyboard_3_45ca86e3-ee84-48a0-b55d-c991d2e57e3c_1920x1080_crop_center.jpg.webp?v=1712087520" alt="Product 2 Hover">
+      </a>
+      <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>MONOGRAM MULTIPAD</h3>
+      <div class="status">Sold out</div>
+    </div>
+  </div>
+
+  <!-- Product 3 -->
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Packaging_CoreBracket1_Monogram_May20204545_ccb8b10a-0772-448b-9857-a14fa83bd5b7_1920x1280_crop_center.jpg.webp?v=1593651640" alt="Product 3">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Consoles_CoreBracket1_Monogram_May2020_4578_6683fd8e-be63-45bb-9fbd-dd82a4838db8_1920x1280_crop_center.jpg.webp?v=1593651640" alt="Product 3 Hover">
+      </a>
+      <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>MONOGRAM CORE</h3>
+      <div class="status">Sold Out</div>
+    </div>
+  </div>
+
+  <!-- Product 4 -->
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Packaging_CoreBracket1_Monogram_May20204545_ccb8b10a-0772-448b-9857-a14fa83bd5b7_1920x1280_crop_center.jpg.webp?v=1593651640" alt="Product 4">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Consoles_SliderBracket1_Monogram_May2020_4565_f941e8d9-d194-47ee-a54a-79132f105e34_1920x1280_crop_center.jpg.webp?v=1593651879" alt="Product 4 Hover">
+      </a>
+      <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>SLIDER MODULE</h3>
+      <div class="status">Sold Out</div>
+    </div>
+  </div>
+
+  <!-- Product 5 -->
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Packaging_CoreBracket1_Monogram_May20204545_ccb8b10a-0772-448b-9857-a14fa83bd5b7_1920x1280_crop_center.jpg.webp?v=1593651640" alt="Product 5">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Consoles_OrbiterHero_Monogram_May2020_4568_3d64e8b3-71ce-441a-9fcd-2b054c423310_1920x1280_crop_center.jpg.webp?v=1593651849" alt="Product 5 Hover">
+      </a>
+      <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>Orbiter Module</h3>
+      <div class="status">Sold Out</div>
+    </div>
+  </div>
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Packaging_CoreBracket1_Monogram_May20204545_ccb8b10a-0772-448b-9857-a14fa83bd5b7_1920x1280_crop_center.jpg.webp?v=1593651640" alt="Product 5">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Consoles_KeysBracket1_Monogram_May2020_4571_43b65ca9-4fde-4f55-9f0e-32374554ce76_1920x1280_crop_center.jpg.webp?v=1593651769" alt="Product 5 Hover">
+      </a>
+      <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>Essential Keys Module</h3>
+      <div class="status">Sold Out</div>
+    </div>
+  </div>
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Packaging_CoreBracket1_Monogram_May20204545_ccb8b10a-0772-448b-9857-a14fa83bd5b7_1920x1280_crop_center.jpg.webp?v=1593651640" alt="Product 5">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Consoles_DialBracket1_Monogram_May2020_4575_981a6401-f834-4094-9a6e-6cd7d0b374ca_1920x1280_crop_center.jpg.webp?v=1593651701" alt="Product 5 Hover">
+      </a>
+      <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>Dial Module</h3>
+      <div class="status">Sold Out</div>
+    </div>
+  </div>
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/20221018_MonogramCC_Case_06_1920x1280_crop_center.jpg.webp?v=1666726898" alt="Product 5">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/20221018_MonogramCC_Case_01_1920x1280_crop_center.jpg.webp?v=1666799808" alt="Product 5 Hover">
+      </a>
+      <span class="badge">PRE-ORDER</span>
+    </div>
+    <div class="product-header">
+      <h3>Monogram Carrying Case</h3>
+      <div class="status">Sold Out</div>
+    </div>
+  </div>
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/SW-box-render-mini-video-final-august_1920x1382_crop_center.jpg.webp?v=1661441054" alt="Product 5">
+      </a>
+    </div>
+    <div class="product-header">
+      <h3>Console Pack: Video</h3>
+      <div class="status">$69</div>
+    </div>
+  </div>
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/SW-box-render-mini-photo-final-august_1920x1382_crop_center.jpg.webp?v=1661440997" alt="Product 5">
+      </a>
+    </div>
+    <div class="product-header">
+      <h3>Console Pack: Photo</h3>
+      <div class="status">$39</div>
+    </div>
+  </div>
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/SW-box-render-mini-midi-final-august_1920x1382_crop_center.jpg.webp?v=1661440892" alt="Product 5">
+      </a>
+    </div>
+    <div class="product-header">
+      <h3>Console Pack: Audio</h3>
+      <div class="status">$29</div>
+    </div>
+  </div>
+  <div class="product-card">
+    <div class="figure">
+      <a href="#">
+        <img class="Sirv image-main" src="https://cdn.shopify.com/s/files/1/0974/7950/products/Care-updated-traveler_1920x1270_crop_center.jpg.webp?v=1633483052" alt="Product 5">
+        <img class="Sirv image-hover" src="https://cdn.shopify.com/s/files/1/0974/7950/products/MONO_CONSOLE_CARE_STU_453eaa1a-02d9-4ba7-9d9a-8d05e2915f8f_1920x1270_crop_center.jpg.webp?v=1633485492" alt="Product 5 Hover">
+      </a>
+    </div>
+    <div class="product-header">
+      <h3>Monogram Care</h3>
+      <div class="status">$19-$219</div>
+    </div>
+</section>
+<footer style="background-color: #1a2456; color: #f2d5bc; padding: 60px 40px 30px; font-family: 'Segoe UI', sans-serif;">
+  <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px;">
+    
+    <!-- MONOGRAM Column -->
+    <div>
+      <h3 style="font-size: 16px; margin-bottom: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">MONOGRAM</h3>
+      <p style="line-height: 1.6; font-size: 14px; color: #c8b8a7;">
+        305 King St. W.<br>
+        Suite 502<br>
+        Kitchener, CN<br>
+        Canada
+      </p>
+    </div>
+    
+    <!-- QUICK LINES Column -->
+    <div>
+      <h3 style="font-size: 16px; margin-bottom: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">QUICK LINES</h3>
+      <ul style="list-style: none; line-height: 2.2;">
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Home</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">How it Works</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Shop</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Download</a></li>
+      </ul>
+    </div>
+    
+    <!-- HELP Column -->
+    <div>
+      <h3 style="font-size: 16px; margin-bottom: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">HELP</h3>
+      <ul style="list-style: none; line-height: 2.2;">
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">FAQs</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Support Center</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Shipping and Sales</a></li>
+      </ul>
+    </div>
+    
+    <!-- INFORMATION Column -->
+    <div>
+      <h3 style="font-size: 16px; margin-bottom: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">INFORMATION</h3>
+      <ul style="list-style: none; line-height: 2.2;">
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">About Us</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Work with us</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Privacy Policy</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Terms of Use</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Terms of Sale</a></li>
+        <li><a href="#" style="color: #f2d5bc; text-decoration: none; font-size: 14px; transition: color 0.2s;">Press Kit</a></li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- SUBSCRIBE Section -->
+  <div style="max-width: 1200px; margin: 50px auto 0; padding-top: 30px; border-top: 1px solid #2a3566;">
+    <h3 style="font-size: 16px; margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">SUBSCRIBE TO MONOGRAM</h3>
+    <p style="font-size: 14px; margin-bottom: 20px; line-height: 1.5; color: #c8b8a7;">
+      Master productivity with Creative Console and get all the latest Monogram news.
+    </p>
+    <form style="display: flex; max-width: 500px;">
+      <input type="email" placeholder="Email Address" style="
+        padding: 12px 15px;
+        border: none;
+        border-radius: 4px 0 0 4px;
+        flex-grow: 1;
+        font-size: 14px;
+        background: #0f183d;
+        color: #f2d5bc;
+      ">
+      <button type="submit" style="
+        background-color: #ffcc00;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 0 4px 4px 0;
+        cursor: pointer;
+        font-weight: 600;
+        color: #1a2456;
+        transition: background-color 0.2s;
+      ">Subscribe</button>
+    </form>
+  </div>
+  
+  <!-- Footer bottom section -->
+  <div style="max-width: 1200px; margin: 30px auto 0; padding-top: 20px; border-top: 1px solid #2a3566; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <a href="#" style="font-weight: 600; font-size: 14px; color: #f2d5bc; text-decoration: none;">MONOGRAM CARE</a>
+      <a href="#" style="font-weight: 600; font-size: 14px; color: #f2d5bc; text-decoration: none;">SUPPORT</a>
+    </div>
+    
+    <div style="position: relative; max-width: 250px;">
+      <input type="text" placeholder="Type here to search" style="
+        width: 100%;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        background: #0f183d;
+        color: #f2d5bc;
+      ">
+    </div>
+  </div>
+  
+  <!-- Copyright -->
+  <div style="max-width: 1200px; margin: 20px auto 0; text-align: center; font-size: 12px; color: #a89b8c; padding-top: 10px;">
+    &copy; 2024 Monogram. All rights reserved.
+  </div>
+</footer>
+<script>
+const sideMenu = document.getElementById("sideMenu");
+const menuToggle = document.querySelector(".menu-toggle");
+
+// Toggle side menu
+menuToggle.addEventListener("click", () => {
+  sideMenu.classList.toggle("active");
+});
+
+// Close side menu on outside click
+document.addEventListener("click", (event) => {
+  const clicked = event.target;
+  if (
+    sideMenu.classList.contains("active") &&
+    !sideMenu.contains(clicked) &&
+    clicked !== menuToggle
+  ) {
+    sideMenu.classList.remove("active");
+  }
+});
+
+// Mobile dropdown inside side menu
+function toggleDropdownMobile(el) {
+  el.classList.toggle("active");
+}
+
+// Sticky navbar
+const navbar = document.getElementById("navbar");
+const sticky = navbar.offsetTop;
+window.addEventListener("scroll", () => {
+  if (window.pageYOffset > sticky) {
+    navbar.classList.add("sticky");
+  } else {
+    navbar.classList.remove("sticky");
+  }
+});
+
+// Scroll to products
+function scrollToProducts() {
+  document.getElementById("products").scrollIntoView({ behavior: "smooth" });
+}
+
+</script>
+
+</body>
+</html>
